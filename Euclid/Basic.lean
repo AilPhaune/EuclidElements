@@ -42,10 +42,21 @@ def Segment.length (s: Segment): ℝ := distance s.p1 s.p2
   Missing segment exioms
 -/
 axiom length_is_congruence (s1 s2: Segment): (s1.length = s2.length) ↔ (s1 ≃ s2)
-axiom segments_eq (s1 s2: Segment): (s1 = s2) ↔ (s1.p1 = s2.p2 ∧ s1.p2 = s2.p2) ∨ (s1.p1 = s2.p2 ∧ s1.p2 = s2.p2)
+axiom segments_eq (s1 s2: Segment): (s1 = s2) ↔ (s1.p1 = s2.p1 ∧ s1.p2 = s2.p2) ∨ (s1.p1 = s2.p2 ∧ s1.p2 = s2.p1)
+axiom split_segment (s: Segment) (p: Point): p.onSegment s ↔ distance s.p1 p + distance p s.p2 = distance s.p1 s.p2
 
+lemma make_segment_symm (p1 p2: Point): (make_segment p1 p2) = (make_segment p2 p1) := by
+  let s1 := make_segment p1 p2
+  let s2 := make_segment p2 p1
+  have h1: s1 = make_segment p1 p2 := by rfl
+  have h2: s2 = make_segment p2 p1 := by rfl
+  rw [← h1, ← h2, segments_eq, h1, h2, make_segment, make_segment]
+  simp
 
 structure Line := (p1: Point) (p2: Point) (h_distinct: p1 ≠ p2)
+
+def make_line (a b: Point) (h: a ≠ b): Line :=
+  Line.mk a b h
 
 def line_of_seg (s: Segment) (h: s.p1 ≠ s.p2): Line :=
   Line.mk s.p1 s.p2 h
