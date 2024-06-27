@@ -270,3 +270,36 @@ theorem place_straight_line_at_given_point (A: Point) (s1: Segment):
       symm
       exact B_on_DG
     }
+
+/-
+  PROPOSITION 3: Subtract a segment from a larger one
+-/
+
+theorem subtract_segment_from_a_larger_one (s1 s2: Segment) (h: s1.length < s2.length):
+  ∃ (p: Point), p.onSegment s2 ∧ (distance s2.p1 p = s1.length)
+  := by
+    let ⟨A, B⟩ := s2
+
+    rw [Segment.length, Segment.length] at h
+    simp at h
+
+    let cAs1 := make_circle A s1
+    let hcAs1: cAs1 = make_circle A s1 := by rfl
+
+    have B_nin_cAs1: B ∉ cAs1.inside_points := by
+      rw [Circle.inside_points, Set.mem_setOf, Circle.center, Circle.radius, hcAs1, make_circle, Segment.length]
+      simp
+      rw [distance_symm B A]
+      exact h
+
+    have hAB: A ≠ B := by
+      by_contra h0
+      rw [distance_eq_zero] at h0
+      rw [h0] at h
+      have h1 := distance_non_negative s1.p1 s1.p2
+      linarith
+
+    obtain ⟨⟨p, hp⟩⟩  := circle_intersect_line cAs1 A B hAB (center_inside_circle cAs1) B_nin_cAs1
+    rw [make_segment, Circle.circumference, Set.mem_setOf, Circle.radius, Circle.center, hcAs1, make_circle, distance_symm] at hp
+    simp at hp
+    use p
