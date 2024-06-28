@@ -303,3 +303,170 @@ theorem subtract_segment_from_a_larger_one (s1 s2: Segment) (h: s1.length < s2.l
     rw [make_segment, Circle.circumference, Set.mem_setOf, Circle.radius, Circle.center, hcAs1, make_circle, distance_symm] at hp
     simp at hp
     use p
+
+/-
+  PROPOSITION 4
+-/
+
+-- Couldn't prove it using the axioms, perhaps some axioms are missing ?
+-- TODO:
+axiom side_angle_side_theorem (A B C D E F: Point):
+  (distance A B = distance D E)
+  → (distance A C = distance D F)
+  → (make_angle C A B ≃ make_angle F D E)
+  → (make_triangle A B C) ≃ (make_triangle D E F)
+
+/-
+  PROPOSITION 5: In isoceles triangles, the angles at the base are equal to one another, and, if the equal segments be produced further, the angles under the base will be equal to one another
+-/
+theorem isoceles_triangle_angle_relation (A B C: Point) (h1: distinct A B C):
+  (distance A B = distance A C)
+  → (make_angle A B C) ≃ (make_angle B C A)
+  := by
+    intro h2
+
+    let ⟨hdAB, hdAC, _⟩ := h1
+
+    let sAB := make_segment A B
+
+    let ⟨_, _, _, existsF⟩ := extend_segment sAB hdAB
+    obtain ⟨F, hF⟩ := existsF
+    rw [← make_line] at hF
+    obtain ⟨_, hFB, _⟩ := hF
+
+
+    let AF := make_segment A F
+
+    let cAAF := make_circle A (make_segment A F)
+    have hcAAF: cAAF = make_circle A (make_segment A F) := by rfl
+
+    have B_in_FA: B.onSegment (make_segment F A) := by exact hFB
+
+    have c_in_cAAF: C ∈ cAAF.inside_points := by
+      rw [Circle.inside_points, Set.mem_setOf, hcAAF, make_circle, Circle.radius, make_segment, Segment.length]
+      simp
+      rw [distance_symm, ← h2]
+      rw [make_segment_symm] at B_in_FA
+      exact split_segment' AF B B_in_FA
+
+    obtain ⟨_, ⟨G, hG⟩⟩ := circle_intersect_line' cAAF A C hdAC (center_inside_circle cAAF) c_in_cAAF
+
+    let FC := make_segment F C
+    have hFC: FC = make_segment F C := by rfl
+    let BG := make_segment B G
+    have fBG: BG = make_segment B G := by rfl
+
+    have C_in_GA := hG.1
+
+    have F_on_cAAF: F ∈ cAAF.circumference := by
+        apply radius_on_circumference cAAF
+        rw [hcAAF, make_circle, make_segment]
+    have FA_eq_GA: distance A F = distance A G := two_points_on_cicumference_distance_eq_to_center cAAF F G F_on_cAAF hG.2
+
+    have BF_eq_CG: distance B F = distance C G := by
+      rw [split_segment, make_segment] at B_in_FA C_in_GA
+      simp at B_in_FA C_in_GA
+      nth_rw 2 [distance_symm] at B_in_FA C_in_GA
+      rw [h2] at B_in_FA
+      rw [distance_symm A F, distance_symm A G] at FA_eq_GA
+      rw [FA_eq_GA] at B_in_FA
+      symm at B_in_FA
+      rw [B_in_FA] at C_in_GA
+      simp at C_in_GA
+      symm
+      rw [distance_symm C G, distance_symm B F]
+      exact C_in_GA
+
+    have hdBAC := shuffle_distinct $ refl_distinct h1
+    have hdCAB := shuffle_distinct' h1
+
+    let α := make_angle F A C
+    let β := make_angle G A B
+    let γ := make_angle B A C
+
+    rw [make_segment_symm] at B_in_FA
+    have hα: α ≃ γ := angle_side_part_l F A C B (B_in_FA)
+
+    rw [make_segment_symm] at C_in_GA
+    have hβ: β ≃ γ := by
+      have hangle1 := angle_side_part_l G A B C (C_in_GA)
+      rw [angle_symm C A B] at hangle1
+      exact hangle1
+
+    rw [congruence_symm] at hβ
+
+    have hαβ := congruence_trans hα hβ
+
+    let ΔABG := make_triangle A B G
+    have hABG: ΔABG = make_triangle A B G := by rfl
+    let ΔACF := make_triangle A C F
+    have hACF: ΔACF = make_triangle A C F := by rfl
+
+    symm at FA_eq_GA
+    rw [congruence_symm] at hαβ
+
+    have ABG_eq_ACF: ΔABG ≃ ΔACF := side_angle_side_theorem A B G A C F h2 FA_eq_GA hαβ
+
+    let δ := make_angle B F C
+    let ε := make_angle C G B
+    let ζ := make_angle A F C
+
+    let ΔBFC := make_triangle B F C
+    let ΔCGB := make_triangle C G B
+
+    have ABG_eq_ACF' := (triangle_congruence A B G A C F).mp ABG_eq_ACF
+
+    rw [make_segment_symm] at B_in_FA C_in_GA
+
+    have hδ: ζ ≃ δ := angle_side_part_l A F C B B_in_FA
+    have hε: ε ≃ ζ := by
+      have hangle1 := angle_side_part_l A G B C C_in_GA
+      rw [angle_symm, congruence_symm] at hangle1
+      have hangle2 := congruence_trans hangle1 ABG_eq_ACF'.2.2.2.2.1
+      rw [angle_symm C F A] at hangle2
+      exact hangle2
+    have hδε: ε ≃ δ := congruence_trans hε hδ
+    rw [congruence_symm] at hδε
+
+    have BC_eq_CB: distance B C = distance C B := by rw [distance_symm]
+
+    have FC_eq_GB := ABG_eq_ACF'.2.1
+    rw [distance_symm C F, distance_symm B G] at FC_eq_GB
+    symm at FC_eq_GB
+
+    rw [distance_symm B F, distance_symm C G] at BF_eq_CG
+
+    let ΔFCB := make_triangle F C B
+    let ΔGBC := make_triangle G B C
+
+    have FCB_eq_GBC: ΔFCB ≃ ΔGBC := side_angle_side_theorem F C B G B C FC_eq_GB BF_eq_CG hδε
+
+    have FCB_eq_GBC' := (triangle_congruence F C B G B C).mp FCB_eq_GBC
+
+    let η := make_angle C B G
+    have hη: η = make_angle C B G := by rfl
+    let θ := make_angle B C F
+    have hθ: θ = make_angle B C F := by rfl
+
+    have hηθ: η ≃ θ := by
+      have h := FCB_eq_GBC'.2.2.2.1
+      rw [angle_symm F C B, angle_symm G B C, ← hη, ← hθ, congruence_symm] at h
+      exact h
+
+    let ι := make_angle A B G
+    let κ := make_angle A C F
+
+    have hικ: ι ≃ κ := ABG_eq_ACF'.2.2.2.1
+
+    let Λ := make_angle A B C
+    have dΛ: Λ = make_angle A B C := by rfl
+    let μ := make_angle A C B
+    have dμ: μ = make_angle A C B := by rfl
+
+    have hΛ: add_angles Λ η ≃ κ := congruence_trans (sum_of_angles A B C G) hικ
+    have hμ: add_angles μ θ ≃ κ := sum_of_angles A C B F
+    rw [congruence_symm] at hμ
+
+    have hfinal: Λ ≃ μ := (sum_of_eq_angles Λ η μ θ (congruence_trans hΛ hμ)).mpr hηθ
+    rw [dΛ, dμ, angle_symm A C B] at hfinal
+    exact hfinal
